@@ -9,6 +9,7 @@ import json
 import os
 import sys
 import datetime
+import time
 
 #定义11点  用于开启server 酱推送
 global d_time0,d_time1,d_time2,n_time
@@ -543,8 +544,13 @@ def myRedBeanRecords():
 
 
 #定义查询红包池函数 
+_last_pool_call=[0.0]
 def queryredpool():
     global wm_latitude,wm_longitude,token
+    # 抢大额红包的逻辑会循环调用本函数，加个最小间隔，避免请求过快被美团风控拉黑 token
+    if time.time() - _last_pool_call[0] < 3:
+        time.sleep(3 - (time.time() - _last_pool_call[0]))
+    _last_pool_call[0] = time.time()
     # wm_latitude = $wm_latitude
     # wm_longitude=$wm_longitude
     print("**开始执行查询红包池详情脚本:**\n")
@@ -559,20 +565,25 @@ def queryredpool():
 
         if(result2["code"]==0 and result2["subcode"]==0 and len(result2["data"]["awardInfos"])):
             for k in result2["data"]["awardInfos"]:
-                if"leftStock" not in k:
-                    print("该地区没有红包池，脚本异常退出！")
-                # if (round(float(k["showPriceNumberYuan"]))==8 and k["leftStock"]==eight_left):
-                #     eight = 0
-                if (round(float(k["showPriceNumberYuan"]))==10 and k["leftStock"]==ten_left):
-                    ten = 0
-                if (round(float(k["showPriceNumberYuan"]))==15 and k["leftStock"]==fifteen_left):
-                    fifteen = 0
-                if (round(float(k["showPriceNumberYuan"]))==30 and k["leftStock"]==thirty_left):
-                    thirty = 0
-                if (round(float(k["showPriceNumberYuan"]))==50 and k["leftStock"]==fifty_left):
-                    fifty = 0
+                # 2026 版接口已不再返回 leftStock / sendStock，缺字段时只打印总量，不再让脚本崩掉
+                left = k.get("leftStock")
+                send = k.get("sendStock")
+                if left is not None:
+                    # if (round(float(k["showPriceNumberYuan"]))==8 and left==eight_left):
+                    #     eight = 0
+                    if (round(float(k["showPriceNumberYuan"]))==10 and left==ten_left):
+                        ten = 0
+                    if (round(float(k["showPriceNumberYuan"]))==15 and left==fifteen_left):
+                        fifteen = 0
+                    if (round(float(k["showPriceNumberYuan"]))==30 and left==thirty_left):
+                        thirty = 0
+                    if (round(float(k["showPriceNumberYuan"]))==50 and left==fifty_left):
+                        fifty = 0
                 if counttime<3:
-                    print("*红包池中%s元总量:%d张,已被领取:%d张,剩余%d张*\n"%(k["showPriceNumberYuan"],k["totalStock"],k["sendStock"],k["leftStock"]))
+                    if left is None or send is None:
+                        print("*红包池中%s元总量:%d张(接口未返回剩余数量，已跳过余量判断)*\n"%(k["showPriceNumberYuan"],k.get("totalStock",-1)))
+                    else:
+                        print("*红包池中%s元总量:%d张,已被领取:%d张,剩余%d张*\n"%(k["showPriceNumberYuan"],k.get("totalStock",-1),send,left))
                 counttime =counttime +1
         elif (result2["code"]==1 and result2["subcode"]==-1):
             print("token失效,导致获取活动信息失败！%s\n"%(result2["msg"]))
