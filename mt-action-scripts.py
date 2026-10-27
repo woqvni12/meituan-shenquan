@@ -874,6 +874,11 @@ def main():
     querymyProps()
     myRedBeanRecords()
     sys.stdout = temp
+    # 原版把运行日志缓存在 a._buff 里，只在推送时用；没开推送就什么都看不到。
+    # GitHub Actions 里把缓冲区打到标准输出，方便在 Actions 页面 / gh run view --log 里查。
+    print("================ 运行日志开始 ================")
+    print(a._buff)
+    print("================ 运行日志结束 ================")
     if(yesornot2 == "y"):
         pushPlus()
     else:
