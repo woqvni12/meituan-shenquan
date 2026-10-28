@@ -14,10 +14,14 @@ on:
   watch:
     types: started
   schedule:
-    # 北京时间 11 / 14 / 17 / 21 点
-    - cron: '0 3,6,9,13 * * *'
-    # 北京时间 0 / 1 / 2 / 3 点（UTC 前一天 16-19 点）
-    - cron: '0 16,17,18,19 * * *'
+    # 2026-10-28 修订：改用 schedule 的 timezone 字段，直接写北京时间（GitHub 2026 起支持）
+    # 同时这次 cron 变更会让 GitHub 重新注册/激活 fork 上的定时任务
+    # 抢券 / 兑换必中符：11、14、17、21 点
+    - cron: '0 11,14,17,21 * * *'
+      timezone: 'Asia/Shanghai'
+    # 补签到领豆：0、1、2、3 点
+    - cron: '0 0,1,2,3 * * *'
+      timezone: 'Asia/Shanghai'
 
 jobs:
   mt-action:
